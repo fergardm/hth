@@ -123,7 +123,7 @@ def plot_info_reward_episodes(
             title=f"{label} per episode",
             ylabel="Reward",
         )
-        axis.legend()
+        axis.legend(loc="upper left")
         axis.grid(True, alpha=0.3)
 
     flat_axes[-1].set_xlabel("Episode")
@@ -216,7 +216,7 @@ def plot_training_trials(
         axis.grid(True, alpha=0.3)
         handles, labels = axis.get_legend_handles_labels()
         if handles:
-            axis.legend()
+            axis.legend(loc="upper left")
     flat_axes[-1].set_xlabel("Training episode")
 
     figure.tight_layout()
@@ -342,7 +342,7 @@ def plot_agent_training_curves(
         axis.grid(True, alpha=0.3)
         handles, labels = axis.get_legend_handles_labels()
         if handles:
-            axis.legend()
+            axis.legend(loc="upper left")
     flat_axes[-1].set_xlabel("Training episode")
 
     figure.tight_layout()
