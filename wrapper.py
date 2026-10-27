@@ -260,8 +260,120 @@ class EvitarAtasco(gym.RewardWrapper):
 
         return recompensa
 
+class VelocidadConHorizonte(gym.RewardWrapper):
+    def __init__(self, env, peso=0.05, horizonte=4.0):
+        super().__init__(env)
+        self.peso = peso
+        self.horizonte = horizonte
+
+    def reward(self, recompensa):
+        coche = self.unwrapped.vehicle
+        carretera = self.unwrapped.road
+
+        if coche.crashed or not coche.on_road:
+            return recompensa
+
+        # Usa las velocidades disponibles en el controlador.
+        velocidades = getattr(coche, "target_speeds", None)
+        vmax = float(max(velocidades)) if velocidades is not None else 30.0
+        objetivo = vmax
+
+        # Durante un cambio, considera tanto el carril actual
+        # como el carril al que se dirige.
+        carriles = {coche.lane_index, coche.target_lane_index}
+
+        for carril in carriles:
+            delantero, _ = carretera.neighbour_vehicles(coche, carril)
+
+            if delantero is None:
+                continue
+
+            hueco = max(
+                0.0,
+                coche.lane_distance_to(delantero)
+                - (coche.LENGTH + delantero.LENGTH) / 2,
+            )
+
+            # Margen orientativo: 5 m + un segundo de recorrido.
+            margen = 5.0 + max(0.0, coche.velocity[0])
+
+            # Estimación con velocidades longitudinales constantes.
+            velocidad_admisible = (
+                delantero.velocity[0]
+                + (hueco - margen) / self.horizonte
+            )
+
+            objetivo = min(objetivo, velocidad_admisible)
+
+        objetivo = float(np.clip(objetivo, 0.0, vmax))
+        velocidad = max(0.0, float(coche.velocity[0]))
+
+        # Castiga desviarse del ritmo adecuado:
+        # demasiado lento con vía libre o demasiado rápido sin espacio.
+        error = min(abs(velocidad - objetivo) / max(vmax, 1.0), 1.0)
+
+        return recompensa - self.peso * error
+
+class RadarFuturo(gym.ObservationWrapper):
+    """Añade huecos delanteros y traseros previstos a 2 y 4 s."""
+
+    def __init__(self, env):
+        super().__init__(env)
+
+        # Debe recibir directamente tu LaneSafetyObservation.
+        if not isinstance(env, LaneSafetyObservation):
+            raise ValueError("Aplica RadarFuturo después de LaneSafetyObservation")
+
+        self.gap_cap = env.gap_cap
+        self.closing_cap = env.closing_speed_cap
+
+        # 3 carriles × 2 horizontes × 2 huecos = 12 datos nuevos.
+        self.observation_space = spaces.Box(
+            low=np.concatenate((
+                env.observation_space.low,
+                -np.ones(12, dtype=np.float32),
+            )),
+            high=np.concatenate((
+                env.observation_space.high,
+                np.ones(12, dtype=np.float32),
+            )),
+            dtype=np.float32,
+        )
+
+    def observation(self, obs):
+        # Últimos 34 datos del wrapper original:
+        # 11 por carril + posición lateral.
+        carriles = obs[-34:-1].reshape(3, 11)
+        futuro = []
+
+        for carril in carriles:
+            for segundos in (2.0, 4.0):
+                # Vecino delantero y vecino trasero.
+                for inicio in (1, 6):
+                    visto = carril[inicio]
+                    fiable = carril[inicio + 1]
+
+                    if visto > 0.5 and fiable > 0.5:
+                        hueco = carril[inicio + 2] * self.gap_cap
+                        cierre = carril[inicio + 3] * self.closing_cap
+
+                        previsto = hueco - cierre * segundos
+                        futuro.append(np.clip(
+                            previsto / self.gap_cap, -1.0, 1.0
+                        ))
+                    else:
+                        # Desconocido; los indicadores originales
+                        # permiten distinguirlo de un hueco medido.
+                        futuro.append(0.0)
+
+        return np.concatenate((
+            obs,
+            np.asarray(futuro, dtype=np.float32),
+        ))
+
 def aplicar_wrappers(env):
     """Shared train/test hook; preserves actions, rewards, termination and info."""
     env = LaneSafetyObservation(env)
-    env = PremiarVelocidadAgresivo(env)
+    env = VelocidadConHorizonte(env)
+    env = RadarFuturo(env)
     return env
