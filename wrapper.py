@@ -162,6 +162,103 @@ No learned statistics or additional model files are needed.
         return np.concatenate((observation.ravel(),
                                np.asarray(summaries, dtype=np.float32)))
 
+class PremiarVelocidad(gym.RewardWrapper):
+    def reward(self, recompensa):
+        coche = self.unwrapped.vehicle
+
+        if coche.crashed or not coche.on_road:
+            return recompensa
+
+        delantero, _ = self.unwrapped.road.neighbour_vehicles(
+            coche, coche.lane_index
+        )
+
+        espacio = float("inf")
+        if delantero is not None:
+            espacio = (
+                coche.lane_distance_to(delantero)
+                - (coche.LENGTH + delantero.LENGTH) / 2
+            )
+
+        # Premiar velocidad si hay suficiente espacio delante.
+        if espacio > max(15.0, 2.0 * coche.speed):
+            bonus = min(1.0, max(0.0, (coche.speed - 20.0) / 10.0))
+            recompensa += 0.1 * bonus
+
+        return recompensa
+
+class PremiarVelocidadAgresivo(gym.RewardWrapper):
+    def reward(self, recompensa):
+        coche = self.unwrapped.vehicle
+
+        if coche.crashed or not coche.on_road:
+            return recompensa
+
+        # Premio creciente entre 20 y 30 m/s.
+        velocidad = min(1.0, max(0.0, (coche.speed - 20.0) / 10.0))
+
+        return recompensa + 0.2 * velocidad
+
+class AnticiparColision(gym.RewardWrapper):
+    def reward(self, recompensa):
+        coche = self.unwrapped.vehicle
+
+        if coche.crashed:
+            return recompensa - 1.0
+
+        delantero, _ = self.unwrapped.road.neighbour_vehicles(
+            coche, coche.lane_index
+        )
+
+        if delantero is not None:
+            hueco = (
+                coche.lane_distance_to(delantero)
+                - (coche.LENGTH + delantero.LENGTH) / 2
+            )
+            acercamiento = coche.velocity[0] - delantero.velocity[0]
+
+            if acercamiento > 0:
+                ttc = max(0.0, hueco) / acercamiento
+                if ttc < 3.0:
+                    recompensa -= 0.2 * (1.0 - ttc / 3.0)
+
+        return recompensa
+
+class EvitarAtasco(gym.RewardWrapper):
+    def reward(self, recompensa):
+        coche = self.unwrapped.vehicle
+        carretera = self.unwrapped.road
+
+        if coche.crashed or not coche.on_road:
+            return recompensa
+
+        delantero, _ = carretera.neighbour_vehicles(coche, coche.lane_index)
+
+        # ¿Vamos lentos y tenemos un coche cerca delante?
+        bloqueado = (
+            delantero is not None
+            and coche.speed < 25.0
+            and coche.lane_distance_to(delantero) < 35.0
+        )
+
+        if bloqueado:
+            for carril in carretera.network.side_lanes(coche.lane_index):
+                delante, detras = carretera.neighbour_vehicles(coche, carril)
+
+                libre_delante = (
+                    delante is None
+                    or coche.lane_distance_to(delante) > 50.0
+                )
+                libre_detras = (
+                    detras is None
+                    or coche.lane_distance_to(detras) < -30.0
+                )
+
+                if libre_delante and libre_detras:
+                    recompensa -= 0.05
+                    break
+
+        return recompensa
 
 def aplicar_wrappers(env):
     """Shared train/test hook; preserves actions, rewards, termination and info."""
