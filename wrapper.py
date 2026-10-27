@@ -262,4 +262,6 @@ class EvitarAtasco(gym.RewardWrapper):
 
 def aplicar_wrappers(env):
     """Shared train/test hook; preserves actions, rewards, termination and info."""
-    return LaneSafetyObservation(env)
+    env = LaneSafetyObservation(env)
+    env = PremiarVelocidadAgresivo(env)
+    return env

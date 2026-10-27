@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from numbers import Real
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import gymnasium as gym
@@ -11,7 +12,7 @@ from stable_baselines3.common.vec_env import VecEnv
 if TYPE_CHECKING:
     from stable_baselines3.common.logger import Logger
 
-__all__ = ["InfoRewardCallback", "InfoRewardTrainingCallback", "InfoRewardEvalCallback"]
+__all__ = ["InfoRewardCallback", "InfoRewardTrainingCallback", "BestEpisodeCallback", "InfoRewardEvalCallback"]
 
 class InfoRewardCallback:
     """Collect per-episode totals for numeric reward fields in environment infos."""
@@ -31,6 +32,7 @@ class InfoRewardCallback:
         self.logger = logger
         self.log_prefix = log_prefix.rstrip("/")
         self.episode_rewards: dict[str, list[float]] = {key: [] for key in self.reward_keys}
+        self.last_completed_episode_rewards: dict[int, dict[str, float]] = {}
         self._current_rewards: dict[int, dict[str, float]] = {}
         self._seen_rewards: dict[int, set[str]] = {}
 
@@ -56,6 +58,9 @@ class InfoRewardCallback:
             seen_rewards.add(key)
 
         if locals_["done"]:
+            self.last_completed_episode_rewards[env_index] = {
+                key: current_rewards[key] for key in seen_rewards
+            }
             for key in seen_rewards:
                 episode_reward = current_rewards[key]
                 self.episode_rewards[key].append(episode_reward)
@@ -66,6 +71,7 @@ class InfoRewardCallback:
 
     def reset(self) -> None:
         self.episode_rewards = {key: [] for key in self.reward_keys}
+        self.last_completed_episode_rewards.clear()
         self._current_rewards.clear()
         self._seen_rewards.clear()
 
@@ -99,6 +105,46 @@ class InfoRewardTrainingCallback(BaseCallback):
                 {},
             )
         return True
+
+
+class BestEpisodeCallback(InfoRewardTrainingCallback):
+    """Keep the highest-total-reward training episode and save its policy checkpoint."""
+
+    def __init__(self, reward_keys: Sequence[str], best_model_save_path: str | Path) -> None:
+        super().__init__(reward_keys)
+        self.best_model_save_path = Path(best_model_save_path)
+        self.best_reward = float("-inf")
+        self.best_episode: int | None = None
+        self.best_episode_components: dict[str, float] = {}
+        self.episodes_completed = 0
+        self._current_episode_rewards: dict[int, float] = {}
+
+    def _on_step(self) -> bool:
+        rewards = self.locals["rewards"]
+        dones = self.locals["dones"]
+        continue_training = super()._on_step()
+
+        for env_index, (reward, done) in enumerate(zip(rewards, dones)):
+            self._current_episode_rewards[env_index] = (
+                self._current_episode_rewards.get(env_index, 0.0) + float(reward)
+            )
+            if not done:
+                continue
+
+            self.episodes_completed += 1
+            episode_reward = self._current_episode_rewards.pop(env_index)
+            if episode_reward > self.best_reward:
+                self.best_reward = episode_reward
+                self.best_episode = self.episodes_completed
+                if self.info_reward_callback is None:
+                    raise RuntimeError("BestEpisodeCallback was not initialized")
+                self.best_episode_components = dict(
+                    self.info_reward_callback.last_completed_episode_rewards.get(env_index, {})
+                )
+                self.best_model_save_path.parent.mkdir(parents=True, exist_ok=True)
+                self.model.save(str(self.best_model_save_path))
+
+        return continue_training
 
 
 class InfoRewardEvalCallback(EvalCallback):
