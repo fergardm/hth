@@ -39,24 +39,26 @@ figures = plot_info_reward_episodes(info_rewards, save_dir="./logs/reward_plots"
 
 Each plot shows the **total component reward for an episode** against episode number. These are episode totals, not per-timestep rewards.
 
-## Plotting training info rewards
+## Keeping and plotting the best training episode
 
-To track reward components from training (rather than evaluation), add `InfoRewardTrainingCallback` to the training callbacks. After training, its `episode_rewards` contains one total per completed training episode and can be plotted directly:
+To track reward components from training (rather than evaluation), use `BestEpisodeCallback`. It collects per-episode component totals and saves the policy checkpoint when a completed episode has a higher combined reward than all previous episodes:
 
 ```python
-from src.core.callbacks import InfoRewardTrainingCallback
+from src.core.callbacks import BestEpisodeCallback
 from src.core.evaluation import plot_info_reward_episodes
 
-info_reward_training_callback = InfoRewardTrainingCallback(
-    ("collision_reward", "right_lane_reward", "high_speed_reward", "on_road_reward")
+best_episode_callback = BestEpisodeCallback(
+    ("collision_reward", "right_lane_reward", "high_speed_reward", "on_road_reward"),
+    best_model_save_path="./logs/best_episode_model.zip",
 )
 
-# Include info_reward_training_callback in the CallbackList passed to model.learn().
+# Include best_episode_callback in the CallbackList passed to model.learn().
 plot_info_reward_episodes(
-    info_reward_training_callback.episode_rewards,
+    best_episode_callback.episode_rewards,
     save_dir="./logs/training_reward_plots",
     rolling_window=10,
+    best_episode=best_episode_callback.best_episode,
 )
 ```
 
-The training curves are available only for episodes observed while this callback was enabled, so rerun training to collect them.
+The callback exposes `best_reward`, `best_episode`, and `best_episode_components`. The plot marks the best episode with a red vertical line. Training curves are available only for episodes observed while this callback was enabled, so rerun training to collect them.
