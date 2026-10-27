@@ -310,9 +310,10 @@ class VelocidadConHorizonte(gym.RewardWrapper):
 
         # Castiga desviarse del ritmo adecuado:
         # demasiado lento con vía libre o demasiado rápido sin espacio.
-        error = min(abs(velocidad - objetivo) / max(vmax, 1.0), 1.0)
+        lentitud = np.clip((objetivo - velocidad) / vmax, 0.0, 1.0)
+        exceso = np.clip((velocidad - objetivo) / vmax, 0.0, 1.0)
 
-        return recompensa - self.peso * error
+        return recompensa - 0.10 * lentitud - self.peso * exceso
 
 class RadarFuturo(gym.ObservationWrapper):
     """Añade huecos delanteros y traseros previstos a 2 y 4 s."""
@@ -374,6 +375,6 @@ class RadarFuturo(gym.ObservationWrapper):
 def aplicar_wrappers(env):
     """Shared train/test hook; preserves actions, rewards, termination and info."""
     env = LaneSafetyObservation(env)
-    env = VelocidadConHorizonte(env)
     env = RadarFuturo(env)
+    env = VelocidadConHorizonte(env)
     return env
