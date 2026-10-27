@@ -15,11 +15,14 @@ from statistics import mean, pstdev
 import time
 
 
-def selection_key(metrics, collision_limit):
+def selection_key(metrics, collision_limit, minimum_speed=0.0):
     """Reward first within the empirical safety limit; collisions first outside it."""
     rate, reward = metrics["collision_rate"], metrics["mean_reward"]
     if rate <= collision_limit:
-        return (1, reward, -rate)
+        speed = metrics.get("mean_speed_m_s", 0.0)
+        if speed >= minimum_speed:
+            return (1, 1, reward, -rate)
+        return (1, 0, speed, reward, -rate)
     return (0, -rate, reward)
 
 
@@ -31,6 +34,10 @@ def summarize(episodes):
         "mean_speed_m_s": mean(r["mean_speed_m_s"] for r in episodes),
         "mean_right_lane_fraction": mean(r["right_lane_fraction"] for r in episodes),
         "mean_steps": mean(r["steps"] for r in episodes), "episodes": episodes,
+        "mean_action_fractions": {
+            str(action): mean(r["action_counts"][str(action)] / r["steps"] for r in episodes)
+            for action in range(5)
+        },
     }
 
 
@@ -42,8 +49,10 @@ def evaluate(env, agent, seeds):
         done = False
         reward_sum, speeds, right_lane = 0.0, [], []
         collided = False
+        action_counts = {str(action): 0 for action in range(5)}
         while not done:
             action = 1 if agent is None else agent.predict(observation, deterministic=True)[0]
+            action_counts[str(int(action))] += 1
             observation, reward, terminated, truncated, info = env.step(action)
             reward_sum += float(reward)
             speeds.append(float(info["speed"]))
@@ -53,6 +62,7 @@ def evaluate(env, agent, seeds):
             done = terminated or truncated
         episodes.append({"seed": seed, "reward": reward_sum,
                          "collision": collided, "steps": len(speeds),
+                         "action_counts": action_counts,
                          "mean_speed_m_s": mean(speeds),
                          "right_lane_fraction": mean(int(v) for v in right_lane)})
     return summarize(episodes)
@@ -65,10 +75,14 @@ def write_json(path, data):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--timesteps", type=int, default=200)
-    parser.add_argument("--eval-freq", type=int, default=10)
+    parser.add_argument("--eval-freq", type=int, default=20)
     parser.add_argument("--eval-episodes", type=int, default=20)
     parser.add_argument("--max-collision-rate", type=float, default=0.10,
                         help="Empirical validation constraint, not a safety guarantee (default .10)")
+    parser.add_argument("--min-mean-speed", type=float, default=27.0,
+                        help="Validation speed goal in m/s; safe slower checkpoints rank by speed")
+    parser.add_argument("--reward-mode", choices=["speed", "original"], default="speed")
+    parser.add_argument("--collision-penalty", type=float, default=2.0)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--threads", type=int, default=2)
     parser.add_argument("--device", choices=["cpu", "cuda", "auto"], default="cpu")
@@ -76,6 +90,10 @@ def main():
                         default="highway-v0")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
+    from math import isfinite
+    if (not isfinite(args.min_mean_speed) or not 0 <= args.min_mean_speed <= 30
+            or not isfinite(args.collision_penalty) or args.collision_penalty <= 0):
+        parser.error("Require min-mean-speed in [0, 30] and positive finite collision-penalty")
     if (args.timesteps < 12 or args.eval_freq < 1 or args.eval_episodes < 1
             or args.threads < 1 or args.seed < 0 or not 0 <= args.max_collision_rate <= 1):
         parser.error("Require timesteps >= 512, positive counts, seed >= 0 and collision rate in [0, 1]")
@@ -91,6 +109,7 @@ def main():
         from stable_baselines3.common.env_checker import check_env
         from stable_baselines3.common.monitor import Monitor
         from wrapper import aplicar_wrappers
+        from speed_objective import apply_speed_objective
     except ImportError as error:
         raise SystemExit(f"Missing runtime dependency: {error}. Install requirements.txt first.") from error
 
@@ -107,14 +126,15 @@ def main():
         **config, "validation_seeds": validation_seeds, "test_seeds": test_seeds,
         "versions": {name: metadata.version(name) for name in
                      ("torch", "numpy", "gymnasium", "highway-env", "stable-baselines3")},
-        "selection": "Maximize original reward within collision constraint; otherwise minimize collisions",
-        "reward_shaping": False, "algorithm": "PPO",
-        "ppo": {"learning_rate": 3e-4, "n_steps": 512, "batch_size": 64,
+        "selection": "Safety first; require minimum speed, then maximize original reward; if safe but slow maximize speed",
+        "reward_shaping": args.reward_mode == "speed", "algorithm": "PPO",
+        "ppo": {"learning_rate": 3e-4, "n_steps": 12, "batch_size": 64,
                 "n_epochs": 10, "gamma": .99, "gae_lambda": .95,
                 "clip_range": .2, "ent_coef": .01, "target_kl": .03,
                 "net_arch": {"pi": [128, 128], "vf": [128, 128]}},
     })
     shutil.copyfile(Path(__file__).with_name("wrapper.py"), output / "wrappers.py")
+    shutil.copyfile(Path(__file__).with_name("speed_objective.py"), output / "speed_objective.py")
     (output / "algoritmo.txt").write_text("PPO\n", encoding="utf-8")
     train_env = validation_env = None
     started = time.perf_counter()
@@ -128,7 +148,7 @@ def main():
 
         def assess(self):
             metrics = evaluate(validation_env, self.model, validation_seeds)
-            key = selection_key(metrics, args.max_collision_rate)
+            key = selection_key(metrics, args.max_collision_rate, args.min_mean_speed)
             self.last_evaluation = self.num_timesteps
             record = {"timesteps": self.num_timesteps, **metrics}
             if self.best_key is None or key > self.best_key:
@@ -139,7 +159,9 @@ def main():
                 stream.write(json.dumps(record, allow_nan=False) + "\n")
             print(f"Validation step {self.num_timesteps}: reward={metrics['mean_reward']:.2f}, "
                   f"collisions={metrics['collision_rate']:.1%}, "
-                  f"speed={metrics['mean_speed_m_s']:.2f} m/s", flush=True)
+                  f"speed={metrics['mean_speed_m_s']:.2f} m/s, "
+                  f"FASTER={metrics['mean_action_fractions']['3']:.1%}, "
+                  f"IDLE={metrics['mean_action_fractions']['1']:.1%}", flush=True)
 
         def _on_step(self):
             return True
@@ -160,11 +182,14 @@ def main():
         check_env(validation_env, warn=True)
         baseline = evaluate(validation_env, None, validation_seeds)
         write_json(output / "baseline_validation.json", baseline)
-        train_env = Monitor(aplicar_wrappers(gym.make(args.train_env)),
-                            filename=str(output / "train"))
+        train_env = aplicar_wrappers(gym.make(args.train_env))
+        if args.reward_mode == "speed":
+            train_env = apply_speed_objective(train_env, collision_penalty=args.collision_penalty)
+        train_env = Monitor(train_env, filename=str(output / "train"))
+        print(f"Training reward: {args.reward_mode}; validation/test: original highway reward", flush=True)
         model = PPO(
             "MlpPolicy", train_env, seed=args.seed, device=args.device, verbose=1,
-            learning_rate=3e-4, n_steps=512, batch_size=64, n_epochs=10,
+            learning_rate=3e-4, n_steps=12, batch_size=64, n_epochs=10,
             gamma=0.99, gae_lambda=0.95, clip_range=0.2, ent_coef=0.01,
             target_kl=0.03,
             policy_kwargs={"net_arch": {"pi": [128, 128], "vf": [128, 128]}},
@@ -183,6 +208,8 @@ def main():
             "validation_collision_constraint_met": (
                 validation.best_metrics["collision_rate"] <= args.max_collision_rate),
             "test_collision_constraint_met": test["collision_rate"] <= args.max_collision_rate,
+            "validation_speed_goal_met": validation.best_metrics["mean_speed_m_s"] >= args.min_mean_speed,
+            "test_speed_goal_met": test["mean_speed_m_s"] >= args.min_mean_speed,
             "test_reward_improves_over_idle": test["mean_reward"] > test_baseline["mean_reward"],
             "note": "Empirical results on 20 test episodes; not a collision-probability guarantee.",
         })
