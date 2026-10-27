@@ -1,0 +1,7 @@
+Informacion sobre la evaluacion del agente PPO-safetrack_wrapper:
+ - Entorno de evaluacion: highway-v0
+ - Episodios evaluados: 20
+ - Recompensa media obtenida: 25.95 ± 6.42
+ - Velocidad media por episodio: 20.35 ± 0.96 m/s
+ - Episodios con colision: 2 de 20 (10.0 %)
+ - Longitud media de los episodios: 37.0 pasos

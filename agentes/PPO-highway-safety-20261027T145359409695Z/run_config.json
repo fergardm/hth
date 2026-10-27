@@ -1,0 +1,86 @@
+{
+  "timesteps": 200,
+  "eval_freq": 10,
+  "eval_episodes": 20,
+  "max_collision_rate": 0.1,
+  "seed": 42,
+  "threads": 2,
+  "device": "cpu",
+  "train_env": "highway-v0",
+  "output": "/home/coder/workspace/hth/agentes/PPO-highway-safety-20261027T145359409695Z",
+  "validation_seeds": [
+    10000,
+    10001,
+    10002,
+    10003,
+    10004,
+    10005,
+    10006,
+    10007,
+    10008,
+    10009,
+    10010,
+    10011,
+    10012,
+    10013,
+    10014,
+    10015,
+    10016,
+    10017,
+    10018,
+    10019
+  ],
+  "test_seeds": [
+    200,
+    201,
+    202,
+    203,
+    204,
+    205,
+    206,
+    207,
+    208,
+    209,
+    210,
+    211,
+    212,
+    213,
+    214,
+    215,
+    216,
+    217,
+    218,
+    219
+  ],
+  "versions": {
+    "torch": "2.14.1+cpu",
+    "numpy": "2.5.4",
+    "gymnasium": "1.4.0",
+    "highway-env": "1.12.1",
+    "stable-baselines3": "2.9.0"
+  },
+  "selection": "Maximize original reward within collision constraint; otherwise minimize collisions",
+  "reward_shaping": false,
+  "algorithm": "PPO",
+  "ppo": {
+    "learning_rate": 0.0003,
+    "n_steps": 512,
+    "batch_size": 64,
+    "n_epochs": 10,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "clip_range": 0.2,
+    "ent_coef": 0.01,
+    "target_kl": 0.03,
+    "net_arch": {
+      "pi": [
+        128,
+        128
+      ],
+      "vf": [
+        128,
+        128
+      ]
+    }
+  }
+}

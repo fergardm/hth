@@ -12,7 +12,7 @@ from stable_baselines3.common.vec_env import VecEnv
 if TYPE_CHECKING:
     from stable_baselines3.common.logger import Logger
 
-__all__ = ["InfoRewardCallback", "InfoRewardTrainingCallback", "InfoRewardEvalCallback"]
+__all__ = ["InfoRewardCallback", "InfoRewardTrainingCallback", "BestEpisodeCallback", "InfoRewardEvalCallback"]
 
 class InfoRewardCallback:
     """Collect per-episode totals for numeric reward fields in environment infos."""
