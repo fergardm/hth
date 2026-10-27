@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -16,7 +16,11 @@ from .callbacks import InfoRewardCallback
 if TYPE_CHECKING:
     from matplotlib.figure import Figure
 
-__all__ = ["evaluate_policy_with_info_rewards", "plot_info_reward_episodes"]
+__all__ = [
+    "evaluate_policy_with_info_rewards",
+    "plot_info_reward_episodes",
+    "plot_training_trials",
+]
 
 
 def evaluate_policy_with_info_rewards(
@@ -124,5 +128,99 @@ def plot_info_reward_episodes(
     figure.tight_layout()
     if output_dir is not None:
         figure.savefig(output_dir / "reward_curves.png")
+    plt.show()
+    return figure
+
+
+def plot_training_trials(
+    trials: Sequence[Mapping[str, Any]],
+    save_path: str | Path | None = None,
+    rolling_window: int = 10,
+) -> Figure:
+    """Compare total training rewards and reward components across trials.
+
+    Each trial mapping must contain ``trial_number``, ``params``,
+    ``total_rewards``, ``info_rewards``, and may contain ``best_episode``.
+    """
+    import matplotlib.pyplot as plt
+
+    if not trials:
+        raise ValueError("trials must contain at least one completed training trial")
+    if rolling_window < 1:
+        raise ValueError("rolling_window must be at least 1")
+
+    reward_keys = list(dict.fromkeys(
+        key
+        for trial in trials
+        for key in trial["info_rewards"]
+    ))
+    series = [("Total reward", "total_rewards")] + [
+        (key, key) for key in reward_keys
+    ]
+    figure, axes = plt.subplots(
+        len(series),
+        1,
+        figsize=(11, max(3, 2.8 * len(series))),
+        sharex=True,
+        squeeze=False,
+    )
+    flat_axes = axes[:, 0]
+    colors = plt.get_cmap("tab10")
+
+    for trial_index, trial in enumerate(trials):
+        trial_number = trial["trial_number"]
+        params = trial["params"]
+        config_label = ", ".join(f"{key}={value}" for key, value in params.items())
+        label = f"Trial {trial_number} ({config_label})"
+        color = colors(trial_index % 10)
+
+        for axis, (series_label, data_key) in zip(flat_axes, series):
+            if data_key == "total_rewards":
+                values = trial["total_rewards"]
+            else:
+                values = trial["info_rewards"].get(data_key, ())
+            if len(values) == 0:
+                continue
+
+            episodes = list(range(1, len(values) + 1))
+            axis.plot(episodes, values, color=color, alpha=0.2, linewidth=0.8, label="_nolegend_")
+            if rolling_window > 1:
+                smoothed = [
+                    sum(values[max(0, index - rolling_window + 1) : index + 1])
+                    / len(values[max(0, index - rolling_window + 1) : index + 1])
+                    for index in range(len(values))
+                ]
+                axis.plot(
+                    episodes,
+                    smoothed,
+                    color=color,
+                    label=label,
+                )
+            else:
+                axis.plot(episodes, values, color=color, alpha=0.8, label=label)
+
+            best_episode = trial.get("best_episode")
+            if best_episode is not None:
+                axis.axvline(
+                    best_episode,
+                    color="red",
+                    alpha=0.5,
+                    linestyle="--",
+                    label=f"Trial {trial_number} best episode" if axis is flat_axes[0] else None,
+                )
+
+    for axis, (series_label, _) in zip(flat_axes, series):
+        axis.set(title=f"{series_label} per episode", ylabel="Reward")
+        axis.grid(True, alpha=0.3)
+        handles, labels = axis.get_legend_handles_labels()
+        if handles:
+            axis.legend()
+    flat_axes[-1].set_xlabel("Training episode")
+
+    figure.tight_layout()
+    if save_path is not None:
+        output_path = Path(save_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        figure.savefig(output_path)
     plt.show()
     return figure
