@@ -260,8 +260,62 @@ class EvitarAtasco(gym.RewardWrapper):
 
         return recompensa
 
+class VelocidadConHorizonte(gym.RewardWrapper):
+    def __init__(self, env, peso=0.05, horizonte=4.0):
+        super().__init__(env)
+        self.peso = peso
+        self.horizonte = horizonte
+
+    def reward(self, recompensa):
+        coche = self.unwrapped.vehicle
+        carretera = self.unwrapped.road
+
+        if coche.crashed or not coche.on_road:
+            return recompensa
+
+        # Usa las velocidades disponibles en el controlador.
+        velocidades = getattr(coche, "target_speeds", None)
+        vmax = float(max(velocidades)) if velocidades is not None else 30.0
+        objetivo = vmax
+
+        # Durante un cambio, considera tanto el carril actual
+        # como el carril al que se dirige.
+        carriles = {coche.lane_index, coche.target_lane_index}
+
+        for carril in carriles:
+            delantero, _ = carretera.neighbour_vehicles(coche, carril)
+
+            if delantero is None:
+                continue
+
+            hueco = max(
+                0.0,
+                coche.lane_distance_to(delantero)
+                - (coche.LENGTH + delantero.LENGTH) / 2,
+            )
+
+            # Margen orientativo: 5 m + un segundo de recorrido.
+            margen = 5.0 + max(0.0, coche.velocity[0])
+
+            # Estimación con velocidades longitudinales constantes.
+            velocidad_admisible = (
+                delantero.velocity[0]
+                + (hueco - margen) / self.horizonte
+            )
+
+            objetivo = min(objetivo, velocidad_admisible)
+
+        objetivo = float(np.clip(objetivo, 0.0, vmax))
+        velocidad = max(0.0, float(coche.velocity[0]))
+
+        # Castiga desviarse del ritmo adecuado:
+        # demasiado lento con vía libre o demasiado rápido sin espacio.
+        error = min(abs(velocidad - objetivo) / max(vmax, 1.0), 1.0)
+
+        return recompensa - self.peso * error
+
 def aplicar_wrappers(env):
     """Shared train/test hook; preserves actions, rewards, termination and info."""
     env = LaneSafetyObservation(env)
-    env = PremiarVelocidadAgresivo(env)
+    env = VelocidadConHorizonte(env)
     return env
