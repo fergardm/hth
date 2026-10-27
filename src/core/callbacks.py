@@ -69,6 +69,37 @@ class InfoRewardCallback:
         self._seen_rewards.clear()
 
 
+class InfoRewardTrainingCallback(BaseCallback):
+    """Collect per-episode reward components from training environment infos."""
+
+    def __init__(self, reward_keys: Sequence[str]) -> None:
+        super().__init__()
+        self.reward_keys = tuple(reward_keys)
+        self.info_reward_callback: InfoRewardCallback | None = None
+
+    @property
+    def episode_rewards(self) -> dict[str, list[float]]:
+        if self.info_reward_callback is None:
+            return {key: [] for key in self.reward_keys}
+        return self.info_reward_callback.episode_rewards
+
+    def _on_training_start(self) -> None:
+        self.info_reward_callback = InfoRewardCallback(self.reward_keys)
+
+    def _on_step(self) -> bool:
+        if self.info_reward_callback is None:
+            raise RuntimeError("InfoRewardTrainingCallback was not initialized")
+
+        infos = self.locals["infos"]
+        dones = self.locals["dones"]
+        for env_index, info in enumerate(infos):
+            self.info_reward_callback(
+                {"info": info, "i": env_index, "done": bool(dones[env_index])},
+                {},
+            )
+        return True
+
+
 class InfoRewardEvalCallback(EvalCallback):
     """EvalCallback that logs configured reward components from ``info["rewards"]``."""
 
