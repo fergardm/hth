@@ -117,6 +117,7 @@ class BestEpisodeCallback(InfoRewardTrainingCallback):
         self.best_episode: int | None = None
         self.best_episode_components: dict[str, float] = {}
         self.episodes_completed = 0
+        self.episode_returns: list[float] = []
         self._current_episode_rewards: dict[int, float] = {}
 
     def _on_step(self) -> bool:
@@ -133,6 +134,7 @@ class BestEpisodeCallback(InfoRewardTrainingCallback):
 
             self.episodes_completed += 1
             episode_reward = self._current_episode_rewards.pop(env_index)
+            self.episode_returns.append(episode_reward)
             if episode_reward > self.best_reward:
                 self.best_reward = episode_reward
                 self.best_episode = self.episodes_completed

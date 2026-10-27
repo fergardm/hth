@@ -61,35 +61,47 @@ def evaluate_policy_with_info_rewards(
 
 def plot_info_reward_episodes(
     info_rewards: dict[str, Sequence[float]],
+    total_rewards: Sequence[float] | None = None,
     save_dir: str | Path | None = None,
     rolling_window: int = 1,
     best_episode: int | None = None,
-) -> dict[str, Figure]:
-    """Plot each reward component's total by episode in its own figure.
+) -> Figure:
+    """Plot total reward and reward components in one vertically stacked figure.
 
     If ``rolling_window`` is greater than one, plot a rolling mean alongside the
-    per-episode totals. If ``save_dir`` is provided, save each plot there as a PNG.
-    Figures are also displayed and returned by reward key for further customization.
+    per-episode totals. If ``save_dir`` is provided, save one PNG there.
     """
-    from pathlib import Path
-
     import matplotlib.pyplot as plt
 
     if rolling_window < 1:
         raise ValueError("rolling_window must be at least 1")
     if best_episode is not None and best_episode < 1:
         raise ValueError("best_episode must be at least 1")
+    if total_rewards is None and not info_rewards:
+        raise ValueError("Provide total_rewards or at least one reward component to plot")
 
     output_dir = Path(save_dir) if save_dir is not None else None
     if output_dir is not None:
         output_dir.mkdir(parents=True, exist_ok=True)
 
-    figures: dict[str, Figure] = {}
+    plot_series: list[tuple[str, Sequence[float]]] = []
+    if total_rewards is not None:
+        plot_series.append(("Total reward", total_rewards))
     for key, values in info_rewards.items():
-        if len(values) == 0:
-            continue
+        plot_series.append((key, values))
+    plot_series = [(label, values) for label, values in plot_series if len(values) > 0]
+    if not plot_series:
+        raise ValueError("There are no episode rewards to plot")
 
-        figure, axis = plt.subplots()
+    figure, axes = plt.subplots(
+        len(plot_series),
+        1,
+        figsize=(10, max(3, 2.8 * len(plot_series))),
+        sharex=True,
+        squeeze=False,
+    )
+    flat_axes = axes[:, 0]
+    for axis, (label, values) in zip(flat_axes, plot_series):
         episodes = list(range(1, len(values) + 1))
         axis.plot(episodes, values, marker="o", alpha=0.35, label="Episode total")
         if rolling_window > 1:
@@ -102,17 +114,15 @@ def plot_info_reward_episodes(
         if best_episode is not None:
             axis.axvline(best_episode, color="red", alpha=0.5, label="Best episode")
         axis.set(
-            title=f"{key} per episode",
-            xlabel="Episode",
-            ylabel="Episode total reward",
+            title=f"{label} per episode",
+            ylabel="Reward",
         )
         axis.legend()
         axis.grid(True, alpha=0.3)
-        figure.tight_layout()
-        if output_dir is not None:
-            figure.savefig(output_dir / f"{key.replace('/', '_')}.png")
-        figures[key] = figure
 
-    if figures:
-        plt.show()
-    return figures
+    flat_axes[-1].set_xlabel("Episode")
+    figure.tight_layout()
+    if output_dir is not None:
+        figure.savefig(output_dir / "reward_curves.png")
+    plt.show()
+    return figure
