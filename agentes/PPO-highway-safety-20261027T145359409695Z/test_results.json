@@ -1,0 +1,350 @@
+{
+  "status": "completed",
+  "elapsed_seconds": 960.9198916109999,
+  "timesteps": 512,
+  "baseline": {
+    "mean_reward": 14.354879012345684,
+    "reward_std": 8.427751409885033,
+    "collision_rate": 0.95,
+    "mean_speed_m_s": 24.085391650255474,
+    "mean_right_lane_fraction": 0.15,
+    "mean_steps": 18.4,
+    "episodes": [
+      {
+        "seed": 200,
+        "reward": 18.400000000000006,
+        "collision": true,
+        "steps": 24,
+        "mean_speed_m_s": 24.41349961921379,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 201,
+        "reward": 23.955555555555566,
+        "collision": true,
+        "steps": 30,
+        "mean_speed_m_s": 24.944444444444443,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 202,
+        "reward": 15.200000000000005,
+        "collision": true,
+        "steps": 20,
+        "mean_speed_m_s": 24.698543209876544,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 203,
+        "reward": 14.000000000000004,
+        "collision": true,
+        "steps": 18,
+        "mean_speed_m_s": 24.307794201744464,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 204,
+        "reward": 6.044444444444444,
+        "collision": true,
+        "steps": 8,
+        "mean_speed_m_s": 24.791666666666668,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 205,
+        "reward": 22.000000000000007,
+        "collision": true,
+        "steps": 27,
+        "mean_speed_m_s": 24.451693511248973,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 206,
+        "reward": 8.577777777777776,
+        "collision": true,
+        "steps": 11,
+        "mean_speed_m_s": 24.848484848484848,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 207,
+        "reward": 14.488888888888892,
+        "collision": true,
+        "steps": 19,
+        "mean_speed_m_s": 24.912280701754387,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 208,
+        "reward": 1.8,
+        "collision": true,
+        "steps": 3,
+        "mean_speed_m_s": 19.838669938935812,
+        "right_lane_fraction": 1
+      },
+      {
+        "seed": 209,
+        "reward": 12.719802469135804,
+        "collision": true,
+        "steps": 16,
+        "mean_speed_m_s": 24.70787037037037,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 210,
+        "reward": 18.200000000000006,
+        "collision": true,
+        "steps": 23,
+        "mean_speed_m_s": 24.92753623188406,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 211,
+        "reward": 32.000000000000014,
+        "collision": false,
+        "steps": 40,
+        "mean_speed_m_s": 25.0,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 212,
+        "reward": 25.600000000000012,
+        "collision": true,
+        "steps": 33,
+        "mean_speed_m_s": 24.57345426851912,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 213,
+        "reward": 21.688888888888897,
+        "collision": true,
+        "steps": 28,
+        "mean_speed_m_s": 24.94047619047619,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 214,
+        "reward": 2.4,
+        "collision": true,
+        "steps": 4,
+        "mean_speed_m_s": 22.348936884011582,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 215,
+        "reward": 6.133333333333335,
+        "collision": true,
+        "steps": 8,
+        "mean_speed_m_s": 23.442536953925046,
+        "right_lane_fraction": 1
+      },
+      {
+        "seed": 216,
+        "reward": 1.8,
+        "collision": true,
+        "steps": 3,
+        "mean_speed_m_s": 20.84676521046679,
+        "right_lane_fraction": 1
+      },
+      {
+        "seed": 217,
+        "reward": 16.17777777777778,
+        "collision": true,
+        "steps": 20,
+        "mean_speed_m_s": 24.916666666666668,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 218,
+        "reward": 20.311111111111117,
+        "collision": true,
+        "steps": 25,
+        "mean_speed_m_s": 24.70824559670782,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 219,
+        "reward": 5.6,
+        "collision": true,
+        "steps": 8,
+        "mean_speed_m_s": 24.088267489711935,
+        "right_lane_fraction": 0
+      }
+    ]
+  },
+  "selected_model": {
+    "mean_reward": 26.484146829585413,
+    "reward_std": 5.470191222478892,
+    "collision_rate": 0.05,
+    "mean_speed_m_s": 20.009888118375326,
+    "mean_right_lane_fraction": 0.18,
+    "mean_steps": 38.25,
+    "episodes": [
+      {
+        "seed": 200,
+        "reward": 26.694148001393476,
+        "collision": false,
+        "steps": 40,
+        "mean_speed_m_s": 20.025763751306364,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 201,
+        "reward": 27.58303689028236,
+        "collision": false,
+        "steps": 40,
+        "mean_speed_m_s": 20.025763751306364,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 202,
+        "reward": 26.694148001393476,
+        "collision": false,
+        "steps": 40,
+        "mean_speed_m_s": 20.025763751306364,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 203,
+        "reward": 27.58303689028236,
+        "collision": false,
+        "steps": 40,
+        "mean_speed_m_s": 20.025763751306364,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 204,
+        "reward": 28.471925779171247,
+        "collision": false,
+        "steps": 40,
+        "mean_speed_m_s": 20.025763751306364,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 205,
+        "reward": 29.005259112504568,
+        "collision": false,
+        "steps": 40,
+        "mean_speed_m_s": 20.025763751306364,
+        "right_lane_fraction": 0.6
+      },
+      {
+        "seed": 206,
+        "reward": 28.471925779171247,
+        "collision": false,
+        "steps": 40,
+        "mean_speed_m_s": 20.025763751306364,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 207,
+        "reward": 26.694148001393476,
+        "collision": false,
+        "steps": 40,
+        "mean_speed_m_s": 20.025763751306364,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 208,
+        "reward": 3.02745789856566,
+        "collision": true,
+        "steps": 5,
+        "mean_speed_m_s": 19.458251092685618,
+        "right_lane_fraction": 1
+      },
+      {
+        "seed": 209,
+        "reward": 28.471925779171247,
+        "collision": false,
+        "steps": 40,
+        "mean_speed_m_s": 20.025763751306364,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 210,
+        "reward": 27.58303689028236,
+        "collision": false,
+        "steps": 40,
+        "mean_speed_m_s": 20.025763751306364,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 211,
+        "reward": 26.694148001393476,
+        "collision": false,
+        "steps": 40,
+        "mean_speed_m_s": 20.025763751306364,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 212,
+        "reward": 26.694148001393476,
+        "collision": false,
+        "steps": 40,
+        "mean_speed_m_s": 20.025763751306364,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 213,
+        "reward": 26.694148001393476,
+        "collision": false,
+        "steps": 40,
+        "mean_speed_m_s": 20.025763751306364,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 214,
+        "reward": 26.694148001393476,
+        "collision": false,
+        "steps": 40,
+        "mean_speed_m_s": 20.025763751306364,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 215,
+        "reward": 29.627481334726802,
+        "collision": false,
+        "steps": 40,
+        "mean_speed_m_s": 20.275763751306364,
+        "right_lane_fraction": 1
+      },
+      {
+        "seed": 216,
+        "reward": 29.360814668060133,
+        "collision": false,
+        "steps": 40,
+        "mean_speed_m_s": 20.025763751306364,
+        "right_lane_fraction": 1
+      },
+      {
+        "seed": 217,
+        "reward": 28.471925779171247,
+        "collision": false,
+        "steps": 40,
+        "mean_speed_m_s": 20.025763751306364,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 218,
+        "reward": 28.471925779171247,
+        "collision": false,
+        "steps": 40,
+        "mean_speed_m_s": 20.025763751306364,
+        "right_lane_fraction": 0
+      },
+      {
+        "seed": 219,
+        "reward": 26.694148001393476,
+        "collision": false,
+        "steps": 40,
+        "mean_speed_m_s": 20.025763751306364,
+        "right_lane_fraction": 0
+      }
+    ]
+  },
+  "best_validation_timesteps": 512,
+  "validation_collision_constraint_met": true,
+  "test_collision_constraint_met": true,
+  "test_reward_improves_over_idle": true,
+  "note": "Empirical results on 20 test episodes; not a collision-probability guarantee."
+}
