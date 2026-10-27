@@ -63,6 +63,7 @@ def plot_info_reward_episodes(
     info_rewards: dict[str, Sequence[float]],
     save_dir: str | Path | None = None,
     rolling_window: int = 1,
+    best_episode: int | None = None,
 ) -> dict[str, Figure]:
     """Plot each reward component's total by episode in its own figure.
 
@@ -76,6 +77,8 @@ def plot_info_reward_episodes(
 
     if rolling_window < 1:
         raise ValueError("rolling_window must be at least 1")
+    if best_episode is not None and best_episode < 1:
+        raise ValueError("best_episode must be at least 1")
 
     output_dir = Path(save_dir) if save_dir is not None else None
     if output_dir is not None:
@@ -96,6 +99,8 @@ def plot_info_reward_episodes(
                 for index in range(len(values))
             ]
             axis.plot(episodes, rolling_means, label=f"Rolling mean ({rolling_window} episodes)")
+        if best_episode is not None:
+            axis.axvline(best_episode, color="red", alpha=0.5, label="Best episode")
         axis.set(
             title=f"{key} per episode",
             xlabel="Episode",
