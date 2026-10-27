@@ -1,0 +1,170 @@
+{
+  "mean_reward": 14.640434567901238,
+  "reward_std": 7.278797062893443,
+  "collision_rate": 1,
+  "mean_speed_m_s": 24.321827193508955,
+  "mean_right_lane_fraction": 0.2,
+  "mean_steps": 18.45,
+  "episodes": [
+    {
+      "seed": 10000,
+      "reward": 11.200000000000001,
+      "collision": true,
+      "steps": 15,
+      "mean_speed_m_s": 24.11361839484269,
+      "right_lane_fraction": 0
+    },
+    {
+      "seed": 10001,
+      "reward": 28.800000000000015,
+      "collision": true,
+      "steps": 36,
+      "mean_speed_m_s": 24.79739277549154,
+      "right_lane_fraction": 0
+    },
+    {
+      "seed": 10002,
+      "reward": 6.142024691358026,
+      "collision": true,
+      "steps": 8,
+      "mean_speed_m_s": 24.41574074074074,
+      "right_lane_fraction": 1
+    },
+    {
+      "seed": 10003,
+      "reward": 18.111111111111118,
+      "collision": true,
+      "steps": 23,
+      "mean_speed_m_s": 24.58365283553011,
+      "right_lane_fraction": 0
+    },
+    {
+      "seed": 10004,
+      "reward": 13.17777777777778,
+      "collision": true,
+      "steps": 17,
+      "mean_speed_m_s": 24.436706777481913,
+      "right_lane_fraction": 0
+    },
+    {
+      "seed": 10005,
+      "reward": 8.377777777777776,
+      "collision": true,
+      "steps": 11,
+      "mean_speed_m_s": 25.0,
+      "right_lane_fraction": 0
+    },
+    {
+      "seed": 10006,
+      "reward": 17.288888888888895,
+      "collision": true,
+      "steps": 22,
+      "mean_speed_m_s": 24.56472796441784,
+      "right_lane_fraction": 0
+    },
+    {
+      "seed": 10007,
+      "reward": 11.200000000000001,
+      "collision": true,
+      "steps": 15,
+      "mean_speed_m_s": 24.01304832024815,
+      "right_lane_fraction": 0
+    },
+    {
+      "seed": 10008,
+      "reward": 14.822222222222226,
+      "collision": true,
+      "steps": 19,
+      "mean_speed_m_s": 24.185053148253022,
+      "right_lane_fraction": 0
+    },
+    {
+      "seed": 10009,
+      "reward": 21.73333333333334,
+      "collision": true,
+      "steps": 26,
+      "mean_speed_m_s": 24.520780601207708,
+      "right_lane_fraction": 1
+    },
+    {
+      "seed": 10010,
+      "reward": 7.7333333333333325,
+      "collision": true,
+      "steps": 10,
+      "mean_speed_m_s": 24.833333333333332,
+      "right_lane_fraction": 0
+    },
+    {
+      "seed": 10011,
+      "reward": 30.444444444444457,
+      "collision": true,
+      "steps": 37,
+      "mean_speed_m_s": 24.83705038371705,
+      "right_lane_fraction": 0
+    },
+    {
+      "seed": 10012,
+      "reward": 23.82222222222223,
+      "collision": true,
+      "steps": 29,
+      "mean_speed_m_s": 25.0,
+      "right_lane_fraction": 0
+    },
+    {
+      "seed": 10013,
+      "reward": 4.955555555555556,
+      "collision": true,
+      "steps": 7,
+      "mean_speed_m_s": 23.220042233057196,
+      "right_lane_fraction": 0
+    },
+    {
+      "seed": 10014,
+      "reward": 3.1999999999999997,
+      "collision": true,
+      "steps": 5,
+      "mean_speed_m_s": 22.68720620672865,
+      "right_lane_fraction": 0
+    },
+    {
+      "seed": 10015,
+      "reward": 11.333333333333337,
+      "collision": true,
+      "steps": 14,
+      "mean_speed_m_s": 24.110021116528596,
+      "right_lane_fraction": 1
+    },
+    {
+      "seed": 10016,
+      "reward": 16.088888888888892,
+      "collision": true,
+      "steps": 20,
+      "mean_speed_m_s": 24.42180155168216,
+      "right_lane_fraction": 0
+    },
+    {
+      "seed": 10017,
+      "reward": 12.200000000000005,
+      "collision": true,
+      "steps": 15,
+      "mean_speed_m_s": 24.061599390742067,
+      "right_lane_fraction": 1
+    },
+    {
+      "seed": 10018,
+      "reward": 12.711111111111112,
+      "collision": true,
+      "steps": 16,
+      "mean_speed_m_s": 24.22126847696252,
+      "right_lane_fraction": 0
+    },
+    {
+      "seed": 10019,
+      "reward": 19.466666666666672,
+      "collision": true,
+      "steps": 24,
+      "mean_speed_m_s": 24.41349961921379,
+      "right_lane_fraction": 0
+    }
+  ]
+}
