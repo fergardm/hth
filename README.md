@@ -90,4 +90,4 @@ plot_agent_training_curves(
 )
 ```
 
-The top panel compares total training return, followed by one panel per reward component. Each curve is labeled with its agent and configuration; dashed markers show that agent's highest-reward episode. Each agent must be trained with history collection enabled. Existing model checkpoints alone cannot reconstruct historical training curves.
+The top panel compares total training return, followed by one panel per reward component. Each curve uses only the agent name you provide as its label; dashed markers show that agent's highest-reward episode. Each agent must be trained with history collection enabled. Existing model checkpoints alone cannot reconstruct historical training curves.

@@ -297,8 +297,7 @@ def plot_agent_training_curves(
 
     for agent_index, (agent_name, history) in enumerate(agents.items()):
         color = color_map(agent_index % 10)
-        configuration = history.get("configuration", "")
-        label = f"{agent_name} ({configuration})" if configuration else agent_name
+        label = agent_name
 
         for axis, (_, data_key) in zip(flat_axes, series):
             values = (
