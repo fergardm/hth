@@ -68,18 +68,26 @@ plot_info_reward_episodes(
 
 The callback exposes `best_reward`, `best_episode`, and `best_episode_components`. The plot marks the best episode with a red vertical line. Training curves are available only for episodes observed while this callback was enabled, so rerun training to collect them.
 
-## Comparing training trials
+## Comparing separately trained agents
 
-The PPO notebook can retain each trial's training returns, component totals, and configuration, then compare them in one stacked figure:
+The PPO notebook saves each experiment's training returns, component totals, and wrapper/configuration label to `agentes/<EXPERIMENT_NAME>/training_history.npz`. To compare experiments, for example an agent trained with wrappers and a baseline agent:
 
 ```python
-from src.core.evaluation import plot_training_trials
+from pathlib import Path
+from src.core.evaluation import load_agent_training_history, plot_agent_training_curves
 
-plot_training_trials(
-    training_trial_results,
-    save_path="./logs/training_trial_comparison.png",
+agents = {
+    name: load_agent_training_history(Path("agentes") / experiment / "training_history.npz")
+    for name, experiment in {
+        "PPO baseline": "PPO-baseline",
+        "PPO with safety wrapper": "PPO-safetrack_wrapper",
+    }.items()
+}
+plot_agent_training_curves(
+    agents,
+    save_path="./logs/agent_training_comparison.png",
     rolling_window=10,
 )
 ```
 
-The top panel compares total training return, followed by one panel per reward component. Each trial's rolling-mean curve is labeled with its configuration; red dashed markers show that trial's highest-reward episode. Set `N_COMBINACIONES` to the desired number of trials in the notebook.
+The top panel compares total training return, followed by one panel per reward component. Each curve is labeled with its agent and configuration; dashed markers show that agent's highest-reward episode. Each agent must be trained with history collection enabled. Existing model checkpoints alone cannot reconstruct historical training curves.

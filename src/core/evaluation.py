@@ -18,6 +18,8 @@ if TYPE_CHECKING:
 
 __all__ = [
     "evaluate_policy_with_info_rewards",
+    "load_agent_training_history",
+    "plot_agent_training_curves",
     "plot_info_reward_episodes",
     "plot_training_trials",
 ]
@@ -211,6 +213,133 @@ def plot_training_trials(
 
     for axis, (series_label, _) in zip(flat_axes, series):
         axis.set(title=f"{series_label} per episode", ylabel="Reward")
+        axis.grid(True, alpha=0.3)
+        handles, labels = axis.get_legend_handles_labels()
+        if handles:
+            axis.legend()
+    flat_axes[-1].set_xlabel("Training episode")
+
+    figure.tight_layout()
+    if save_path is not None:
+        output_path = Path(save_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        figure.savefig(output_path)
+    plt.show()
+    return figure
+
+
+def load_agent_training_history(path: str | Path) -> dict[str, Any]:
+    """Load a history archive saved by the PPO training notebook."""
+    import numpy as np
+
+    history_path = Path(path)
+    if not history_path.is_file():
+        raise FileNotFoundError(
+            f"Training history not found: {history_path}. "
+            "Rerun training for this agent to create training_history.npz."
+        )
+
+    with np.load(history_path, allow_pickle=False) as archive:
+        if "total_rewards" not in archive:
+            raise ValueError(f"{history_path} does not contain total_rewards")
+        info_rewards = {
+            key.removeprefix("info_reward__"): archive[key].copy()
+            for key in archive.files
+            if key.startswith("info_reward__")
+        }
+        best_episode = None
+        if "best_episode" in archive:
+            value = int(archive["best_episode"].item())
+            best_episode = value if value > 0 else None
+        configuration = (
+            str(archive["configuration"].item())
+            if "configuration" in archive
+            else ""
+        )
+        return {
+            "total_rewards": archive["total_rewards"].copy(),
+            "info_rewards": info_rewards,
+            "best_episode": best_episode,
+            "configuration": configuration,
+        }
+
+
+def plot_agent_training_curves(
+    agents: Mapping[str, Mapping[str, Any]],
+    save_path: str | Path | None = None,
+    rolling_window: int = 10,
+) -> Figure:
+    """Compare training curves for separately trained agents or wrapper setups."""
+    import matplotlib.pyplot as plt
+
+    if not agents:
+        raise ValueError("agents must contain at least one agent history")
+    if rolling_window < 1:
+        raise ValueError("rolling_window must be at least 1")
+
+    reward_keys = list(dict.fromkeys(
+        key
+        for history in agents.values()
+        for key in history.get("info_rewards", {})
+    ))
+    series = [("Total reward", "total_rewards")] + [
+        (key, key) for key in reward_keys
+    ]
+    figure, axes = plt.subplots(
+        len(series),
+        1,
+        figsize=(11, max(3, 2.8 * len(series))),
+        sharex=True,
+        squeeze=False,
+    )
+    flat_axes = axes[:, 0]
+    color_map = plt.get_cmap("tab10")
+
+    for agent_index, (agent_name, history) in enumerate(agents.items()):
+        color = color_map(agent_index % 10)
+        configuration = history.get("configuration", "")
+        label = f"{agent_name} ({configuration})" if configuration else agent_name
+
+        for axis, (_, data_key) in zip(flat_axes, series):
+            values = (
+                history.get("total_rewards", ())
+                if data_key == "total_rewards"
+                else history.get("info_rewards", {}).get(data_key, ())
+            )
+            if len(values) == 0:
+                continue
+
+            episodes = list(range(1, len(values) + 1))
+            axis.plot(
+                episodes,
+                values,
+                color=color,
+                alpha=0.2,
+                linewidth=0.8,
+                label="_nolegend_",
+            )
+            if rolling_window > 1:
+                smoothed = [
+                    sum(values[max(0, index - rolling_window + 1) : index + 1])
+                    / len(values[max(0, index - rolling_window + 1) : index + 1])
+                    for index in range(len(values))
+                ]
+                axis.plot(episodes, smoothed, color=color, label=label)
+            else:
+                axis.plot(episodes, values, color=color, alpha=0.8, label=label)
+
+            best_episode = history.get("best_episode")
+            if best_episode is not None:
+                axis.axvline(
+                    best_episode,
+                    color=color,
+                    alpha=0.5,
+                    linestyle="--",
+                    label=f"{agent_name} best episode" if axis is flat_axes[0] else None,
+                )
+
+    for axis, (series_name, _) in zip(flat_axes, series):
+        axis.set(title=f"{series_name} per episode", ylabel="Reward")
         axis.grid(True, alpha=0.3)
         handles, labels = axis.get_legend_handles_labels()
         if handles:
